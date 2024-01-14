@@ -31,4 +31,7 @@ class CustomAudioDataset(Dataset):
             for tfm in self.transform:
                 train_waveform = tfm(train_waveform)
                 test_waveform = tfm(test_waveform)
+        
+        train_waveform = train_waveform.squeeze(0)
+        test_waveform = test_waveform.squeeze(0)
         return train_waveform , test_waveform

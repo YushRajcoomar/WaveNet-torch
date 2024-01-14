@@ -21,12 +21,13 @@ class CausalConvBlock(nn.Module):
     super(CausalConvBlock, self).__init__()
     self.layers = layers
     self.in_channels = in_channels
-    self.out_channels = out_channels
+    self.final_out_channels = out_channels
     self.kernel_size = kernel_size
     self.module_list = nn.ModuleList()
 
-    for i in range(layers):
-      self.module_list.append(CausalConv1d(in_channels,out_channels,kernel_size,dilation=1))
+    for i in range(len(layers)-1):
+      in_channel,out_channel = layers[i], layers[i+1]
+      self.module_list.append(CausalConv1d(in_channel,out_channel,kernel_size,dilation=1)) #maybe batchnorm here?
 
   def forward(self,x):
     for layer in self.module_list:

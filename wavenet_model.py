@@ -7,7 +7,7 @@ from wavenet_blocks import *
 class WaveNetModel(nn.Module):
   def __init__(self,in_channels,out_channels,kernel_size,residual_blocks):
     super(WaveNetModel, self).__init__()
-    self.causal_conv1d_layers = 5
+    self.causal_conv1d_layers = [in_channels//(2**i) for i in range(5)] + [1]
     self.dilated_block_layers = 10
     self.in_channels = in_channels
     self.out_channels = out_channels
