@@ -59,11 +59,11 @@ class DilatedResidualLayer(nn.Module):
 
   def forward(self,x):
     dilated_convolved_input = self.dilated_conv_block.forward(x)
-    gated_input = ConvGate.apply(x)
+    gated_input = ConvGate.apply(dilated_convolved_input)
     pre_skip = self.pointwise_conv_residual(gated_input)
     residual_input = pre_skip + x
     skip_result = self.pointwise_conv_skip(gated_input)
-    return x, skip_result
+    return residual_input, skip_result
 
 class DilatedResidualBlock(nn.Module):
   def __init__(self,in_channels,skip_channels,kernel_size):

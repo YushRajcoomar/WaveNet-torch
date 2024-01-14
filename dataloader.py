@@ -1,8 +1,10 @@
 import pandas as pd
-import torch
+import os
 import torchaudio
 from torchaudio import transforms as T
 from torch.utils.data import Dataset, DataLoader
+
+audio_dir = r'C:\Users\yush\OneDrive\Desktop\papers\wavenet\audio'
 
 class CustomAudioDataset(Dataset):
     def __init__(self, df, transform=None):
@@ -17,7 +19,7 @@ class CustomAudioDataset(Dataset):
     def __getitem__(self, idx):
 
         audio_path = self.data.iloc[idx]['mp3_path']
-        waveform, sample_rate = torchaudio.load(audio_path)
+        waveform, sample_rate = torchaudio.load(os.path.join(audio_dir,audio_path))
         resample_transform = T.Resample(sample_rate,16000)
         waveform = resample_transform(waveform)
         split_samples = self.pred_seconds * self.set_sample_rate

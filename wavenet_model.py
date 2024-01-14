@@ -16,7 +16,7 @@ class WaveNetModel(nn.Module):
     self.module_list = nn.ModuleList()
 
     self.causal_conv1d_block = CausalConvBlock(self.causal_conv1d_layers,self.in_channels,self.out_channels,self.kernel_size)
-
+    
     for b in range(self.residual_blocks):
       self.module_list.append(DilatedResidualBlock(self.in_channels,self.out_channels,self.kernel_size))
 
