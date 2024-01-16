@@ -17,11 +17,9 @@ class CausalConv1d(nn.Module):
     return self.conv1d(x)[:,:,:-self.pad]
 
 class CausalConvBlock(nn.Module):
-  def __init__(self,layers,in_channels,out_channels,kernel_size):
+  def __init__(self,layers,kernel_size):
     super(CausalConvBlock, self).__init__()
-    self.layers = layers
-    self.in_channels = in_channels
-    self.final_out_channels = out_channels
+    self.layers = layers # list form
     self.kernel_size = kernel_size
     self.module_list = nn.ModuleList()
 
@@ -80,12 +78,12 @@ class DilatedResidualBlock(nn.Module):
       dilated_residual_layer = DilatedResidualLayer(self.in_channels,self.skip_channels,self.kernel_size,dilation)
       x, skip_result = dilated_residual_layer.forward(x)
       skip_results.append(skip_result)
-    return torch.cat(skip_results,dim=1)
+    return x, torch.cat(skip_results,dim=1)
 
 class DenseBlock(nn.Module):
-  def __init__(self,skip_channels,out_channels,kernel_size):
+  def __init__(self,in_channels,out_channels,kernel_size):
     super(DenseBlock, self).__init__()
-    self.skip_channels = skip_channels
+    self.in_channels = in_channels
     self.out_channels = out_channels
 
   def quantized_softmax(self,x,mu):
@@ -94,9 +92,11 @@ class DenseBlock(nn.Module):
 
   def forward(self,x):
     x = F.relu(x)
-    x = nn.Conv1d(20,1,kernel_size=1,bias=True)(x)
+    x = nn.Conv1d(self.in_channels,self.in_channels//5,kernel_size=1,bias=True)(x)
     x = F.relu(x)
-    x = nn.Conv1d(1,1,kernel_size=1,bias=True)(x)
+    x = nn.Conv1d(self.in_channels//5,self.out_channels,kernel_size=1,bias=True)(x)
+    x = F.relu(x)
+    x = nn.Conv1d(self.out_channels,self.out_channels,kernel_size=1,bias=True)(x)
     output = F.softmax(x,dim=2)
     return output
 
@@ -108,7 +108,7 @@ class OutputBlock(nn.Module):
     self.kernel_size = kernel_size
     self.residual_blocks = residual_blocks
     self.skip_channels = self.residual_blocks * 10
-    self.dense_block = DenseBlock(self.skip_channels,self.out_channels,self.kernel_size)
+    self.dense_block = DenseBlock(self.in_channels,self.out_channels,self.kernel_size)
 
  
   def forward(self,x):
