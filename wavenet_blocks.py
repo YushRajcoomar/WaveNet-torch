@@ -54,7 +54,7 @@ class DilatedResidualLayer(nn.Module):
     super(DilatedResidualLayer, self).__init__()
     self.dilated_conv_block = DilatedConvBlock(in_channels,in_channels,kernel_size,dilation)
     self.pointwise_conv_residual = nn.Conv1d(in_channels,in_channels,kernel_size=1,bias=True)
-    self.pointwise_conv_skip = nn.Conv1d(in_channels,skip_channels,kernel_size=1,bias=True)
+    self.pointwise_conv_skip = nn.Conv1d(in_channels,in_channels,kernel_size=1,bias=True)
 
   def forward(self,x):
     dilated_convolved_input = self.dilated_conv_block.forward(x)
@@ -65,20 +65,29 @@ class DilatedResidualLayer(nn.Module):
     return residual_input, skip_result
 
 class DilatedResidualBlock(nn.Module):
-  def __init__(self,in_channels,skip_channels,kernel_size):
+  def __init__(self,num_layers,num_stack,in_channels,skip_channels,kernel_size):
     super(DilatedResidualBlock, self).__init__()
+    self.num_layers = num_layers
+    self.num_stack = num_stack
     self.in_channels = in_channels
     self.skip_channels = skip_channels
     self.kernel_size = kernel_size
-    self.layers = [2**i for i in range(10)]
+
+  def get_dilations(self):
+    dilations = []
+    for l in range(self.num_stack):
+      for i in range(self.num_layers):
+        dilations.append(2**i)
+    return dilations
 
   def forward(self,x):
     skip_results = []
-    for dilation in self.layers:
+    dilations = self.get_dilations()
+    for dilation in dilations:
       dilated_residual_layer = DilatedResidualLayer(self.in_channels,self.skip_channels,self.kernel_size,dilation)
       x, skip_result = dilated_residual_layer.forward(x)
       skip_results.append(skip_result)
-    return x, torch.cat(skip_results,dim=1)
+    return torch.stack(skip_results)
 
 class DenseBlock(nn.Module):
   def __init__(self,in_channels,out_channels,kernel_size):

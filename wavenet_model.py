@@ -18,20 +18,13 @@ class WaveNetModel(nn.Module):
     self.module_list = nn.ModuleList()
 
     self.causal_conv1d_block = CausalConvBlock(self.causal_conv1d_layers,self.kernel_size)
-    
-    for b in range(self.residual_blocks):
-      self.module_list.append(DilatedResidualBlock(self.in_channels,self.out_channels,self.kernel_size))
-
-    self.dense_block = OutputBlock(self.skip_channels * self.dilated_blocks,self.out_channels,self.kernel_size,self.residual_blocks)
+    self.dilated_block = DilatedResidualBlock(self.dilated_block_layers,self.dilated_blocks,self.in_channels,self.skip_channels,self.kernel_size)
+    self.dense_block = OutputBlock(self.dilated_block_layers,self.out_channels,self.kernel_size,self.residual_blocks) #incorrect
 
 
   def forward(self,x):
-    skip_connections = []
     x = self.causal_conv1d_block.forward(x)
-    for block in self.module_list:
-      x, skip_connection = block.forward(x) #residual_signal
-      skip_connections.append(skip_connection)
-    skip_tensor = torch.cat(skip_connections,dim=1)
-
-    output = self.dense_block.forward(skip_tensor) # skip_channels * num layers
+    skip_connections = self.dilated_block(x)
+    skip_tensor = skip_connections.sum(dim=0)
+    output = self.dense_block.forward(skip_tensor)
     return output
