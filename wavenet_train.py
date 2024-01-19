@@ -18,10 +18,7 @@ class WaveNetTrain:
 
     def predict(self,x):
         self.model.eval()
-        # TODO: Prevent clipping
         with torch.no_grad():
             pred = self.model(x.to(self.device))
-            pred = torch.clip(pred, 0, 100.0)
-
         self.model.train()
         return pred.cpu().numpy()
